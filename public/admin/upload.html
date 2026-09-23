@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload App - DTAhub Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<style>
+  body { background: #0F172A; color: #F1F5F9; }
+  input[type=file]::file-selector-button { padding: 8px 16px; border-radius: 8px; background: #7C3AED; color: white; border: none; margin-right: 12px; cursor: pointer; font-weight: bold; }
+</style>
+</head>
+<body x-data="uploadApp()" x-init="init()">
+
+<nav class="border-b border-purple-500/20 bg-slate-900/50 backdrop-blur">
+  <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+    <a href="/admin/dashboard.html" class="flex items-center gap-2 text-sm hover:text-purple-400">← Dashboard</a>
+    <div class="text-sm text-slate-400" x-text="user?.email || ''"></div>
+  </div>
+</nav>
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold mb-6">Upload New App</h1>
+
+  <form @submit.prevent="submit()" class="space-y-5">
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">App Name *</label>
+        <input type="text" x-model="form.name" required @input="autoSlug()"
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+          placeholder="DTAhub">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Slug (URL) *</label>
+        <input type="text" x-model="form.slug" required
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+          placeholder="dtahub">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-2">Short Description *</label>
+      <input type="text" x-model="form.shortDesc" required maxlength="100"
+        class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+        placeholder="HTML Apps Marketplace">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-2">Long Description</label>
+      <textarea x-model="form.longDesc" rows="4"
+        class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+        placeholder="Detailed description of your app..."></textarea>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Category *</label>
+        <select x-model="form.category" required
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none">
+          <option value="">Select</option>
+          <option>Tools</option>
+          <option>Music</option>
+          <option>Games</option>
+          <option>Productivity</option>
+          <option>Education</option>
+          <option>Entertainment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Version *</label>
+        <input type="text" x-model="form.version" required
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+          placeholder="1.0.0">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Size (MB) *</label>
+        <input type="number" step="0.1" x-model="form.sizeMb" required
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 focus:border-purple-500 focus:outline-none"
+          placeholder="8.5">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-2">APK File * (.apk)</label>
+      <input type="file" accept=".apk" @change="handleApk($event)" required
+        class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700">
+      <p class="text-xs text-slate-400 mt-1" x-show="apkUploading">Uploading APK to Cloudinary...</p>
+      <p class="text-xs text-green-400 mt-1" x-show="form.apkUrl">✅ Uploaded: <span x-text="form.apkUrl?.slice(0, 60) + '...'"></span></p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-2">App Icon (PNG/JPG)</label>
+      <input type="file" accept="image/*" @change="handleIcon($event)"
+        class="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700">
+      <p class="text-xs text-green-400 mt-1" x-show="form.iconUrl">✅ Icon uploaded</p>
+    </div>
+
+    <template x-if="error">
+      <div class="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm" x-text="error"></div>
+    </template>
+
+    <template x-if="success">
+      <div class="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm" x-text="success"></div>
+    </template>
+
+    <button type="submit" :disabled="loading || apkUploading"
+      class="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:shadow-lg hover:shadow-purple-500/30 transition disabled:opacity-50">
+      <span x-show="!loading">Publish App</span>
+      <span x-show="loading">Publishing...</span>
+    </button>
+  </form>
+</main>
+
+<script>
+function uploadApp() {
+  return {
+    form: {
+      name: '', slug: '', shortDesc: '', longDesc: '',
+      category: '', version: '1.0.0', sizeMb: '',
+      apkUrl: '', apkPublicId: '', iconUrl: ''
+    },
+    user: null,
+    loading: false,
+    apkUploading: false,
+    error: '',
+    success: '',
+
+    init() {
+      const token = localStorage.getItem('dtahub_token');
+      const userStr = localStorage.getItem('dtahub_user');
+      if (!token || !userStr) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+      this.user = JSON.parse(userStr);
+    },
+
+    autoSlug() {
+      if (!this.form.slug || this.form.slug === this._lastSlug) {
+        this.form.slug = this.form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        this._lastSlug = this.form.slug;
+      }
+    },
+
+    async handleApk(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      this.apkUploading = true;
+      this.error = '';
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const token = localStorage.getItem('dtahub_token');
+        const res = await fetch('/api/upload/apk', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        this.form.apkUrl = data.url;
+        this.form.apkPublicId = data.publicId;
+        this.form.sizeMb = (data.size / (1024 * 1024)).toFixed(1);
+      } catch (err) {
+        this.error = 'APK upload failed: ' + err.message;
+      } finally {
+        this.apkUploading = false;
+      }
+    },
+
+    async handleIcon(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      this.error = '';
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const token = localStorage.getItem('dtahub_token');
+        const res = await fetch('/api/upload/image', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        this.form.iconUrl = data.url;
+      } catch (err) {
+        this.error = 'Icon upload failed: ' + err.message;
+      }
+    },
+
+    async submit() {
+      this.loading = true;
+      this.error = '';
+      this.success = '';
+      try {
+        const token = localStorage.getItem('dtahub_token');
+        const res = await fetch('/api/apps', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(this.form)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        this.success = '✅ App published! Redirecting...';
+        setTimeout(() => window.location.href = '/admin/dashboard.html', 1500);
+      } catch (err) {
+        this.error = err.message;
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>

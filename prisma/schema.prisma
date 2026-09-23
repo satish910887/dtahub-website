@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}
+
+model WebsiteApp {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  shortDesc   String
+  longDesc    String
+  category    String
+  iconUrl     String
+  screenshots String
+  version     String
+  sizeMb      Float
+  apkUrl      String
+  apkPublicId String?
+  downloads   Int      @default(0)
+  rating      Float    @default(0)
+  features    String
+  changelog   String?
+  platform    String   @default("Android")
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  downloads_log AppDownload[]
+}
+
+model AppDownload {
+  id           String   @id @default(cuid())
+  appId        String
+  ipHash       String
+  userAgent    String?
+  downloadedAt DateTime @default(now())
+
+  app          WebsiteApp @relation(fields: [appId], references: [id])
+}
