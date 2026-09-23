@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="DTAhub - Download amazing apps for free. HTML apps, Music Player, and more.">
+<meta name="theme-color" content="#7C3AED">
+<title>DTAhub - Your Apps, One Place</title>
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#7C3AED',
+          accent: '#4F46E5',
+          dark: '#0F172A',
+          surface: '#1E293B'
+        }
+      }
+    }
+  }
+</script>
+
+<!-- Alpine.js -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+
+<!-- Nyxplay CSS -->
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/navbar.css">
+<link rel="stylesheet" href="/css/hero.css">
+<link rel="stylesheet" href="/css/footer.css">
+<link rel="stylesheet" href="/css/responsive.css">
+<link rel="stylesheet" href="/css/cards.css">
+
+<style>
+  body { background: #0F172A; color: #F1F5F9; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+</style>
+</head>
+<body x-data="homeApp()" x-init="load()">
+
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 backdrop-blur-lg bg-dark/80 border-b border-primary/20">
+  <div class="container flex items-center justify-between py-4">
+    <a href="/" class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-xl">
+        D
+      </div>
+      <div>
+        <div class="font-bold text-lg leading-tight">DTAhub</div>
+        <div class="text-xs text-slate-400 leading-tight">App Store</div>
+      </div>
+    </a>
+
+    <div class="hidden md:flex items-center gap-6">
+      <a href="/" class="text-sm font-medium hover:text-primary transition">Home</a>
+      <a href="/apps.html" class="text-sm font-medium hover:text-primary transition">Apps</a>
+      <a href="/about.html" class="text-sm font-medium hover:text-primary transition">About</a>
+    </div>
+
+    <a href="/admin/login.html" class="px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 text-sm font-semibold hover:bg-primary/20 transition">
+      Admin
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="container py-12 md:py-20">
+  <div class="text-center max-w-3xl mx-auto">
+    <div class="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold mb-6">
+      ✨ 100% Free · No Ads · No Tracking
+    </div>
+    <h1 class="text-4xl md:text-6xl font-black mb-6 leading-tight">
+      Your Apps,<br>
+      <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">One Place</span>
+    </h1>
+    <p class="text-lg text-slate-400 mb-8 max-w-xl mx-auto">
+      Download lightweight, powerful apps for your Android device. No Play Store needed.
+    </p>
+    <div class="flex gap-3 justify-center flex-wrap">
+      <a href="/apps.html" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 transition">
+        Browse Apps
+      </a>
+      <a href="/about.html" class="px-6 py-3 rounded-xl bg-white/5 border border-white/10 font-semibold hover:bg-white/10 transition">
+        Learn More
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Featured -->
+<section class="container py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold">Featured Apps</h2>
+    <a href="/apps.html" class="text-sm text-primary font-semibold hover:underline">View All →</a>
+  </div>
+
+  <!-- Loading -->
+  <template x-if="loading">
+    <div class="app-grid">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  </template>
+
+  <!-- Empty -->
+  <template x-if="!loading && apps.length === 0">
+    <div class="text-center py-20 text-slate-400">
+      <div class="text-5xl mb-4">📦</div>
+      <p class="text-lg">No apps yet</p>
+      <p class="text-sm">Apps will appear here once uploaded</p>
+    </div>
+  </template>
+
+  <!-- Apps grid -->
+  <template x-if="!loading && apps.length > 0">
+    <div class="app-grid">
+      <template x-for="app in apps" :key="app.id">
+        <a :href="'/app.html?slug=' + app.slug" class="app-card">
+          <div class="app-card__icon">
+            <template x-if="app.iconUrl">
+              <img :src="app.iconUrl" :alt="app.name">
+            </template>
+            <template x-if="!app.iconUrl">
+              <span>📱</span>
+            </template>
+          </div>
+          <div class="app-card__name" x-text="app.name"></div>
+          <div class="app-card__meta">
+            <span x-text="'v' + app.version"></span>
+            <span>·</span>
+            <span x-text="app.sizeMb + ' MB'"></span>
+          </div>
+          <div class="app-card__category" x-text="app.category"></div>
+          <div class="app-card__downloads">
+            <span>⬇</span>
+            <span x-text="formatDownloads(app.downloads)"></span>
+          </div>
+        </a>
+      </template>
+    </div>
+  </template>
+</section>
+
+<!-- Features -->
+<section class="container py-16">
+  <h2 class="text-2xl font-bold text-center mb-12">Why DTAhub?</h2>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="p-6 rounded-2xl bg-surface/50 border border-white/5">
+      <div class="text-3xl mb-3">⚡</div>
+      <h3 class="font-bold mb-2">Lightning Fast</h3>
+      <p class="text-slate-400 text-sm">Small APKs, no bloat. Download and start using instantly.</p>
+    </div>
+    <div class="p-6 rounded-2xl bg-surface/50 border border-white/5">
+      <div class="text-3xl mb-3">🔒</div>
+      <h3 class="font-bold mb-2">Privacy First</h3>
+      <p class="text-slate-400 text-sm">No tracking, no ads, no data selling. Your device, your rules.</p>
+    </div>
+    <div class="p-6 rounded-2xl bg-surface/50 border border-white/5">
+      <div class="text-3xl mb-3">💎</div>
+      <h3 class="font-bold mb-2">Completely Free</h3>
+      <p class="text-slate-400 text-sm">All apps 100% free. No hidden charges, no subscriptions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-white/5 py-12 mt-16">
+  <div class="container">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+      <div>
+        <div class="font-bold text-lg mb-1">DTAhub</div>
+        <div class="text-sm text-slate-400">© 2026 DTAhub. All rights reserved.</div>
+      </div>
+      <div class="flex gap-6 text-sm">
+        <a href="/privacy.html" class="text-slate-400 hover:text-primary transition">Privacy</a>
+        <a href="/terms.html" class="text-slate-400 hover:text-primary transition">Terms</a>
+        <a href="/about.html" class="text-slate-400 hover:text-primary transition">About</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Alpine App -->
+<script>
+function homeApp() {
+  return {
+    loading: true,
+    apps: [],
+    async load() {
+      try {
+        const res = await fetch('/api/apps');
+        if (res.ok) {
+          const data = await res.json();
+          this.apps = data.apps || [];
+        } else {
+          this.apps = [];
+        }
+      } catch (e) {
+        console.error('Load failed:', e);
+        this.apps = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+    formatDownloads(n) {
+      if (!n) return '0';
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return n.toString();
+    }
+  }
+}
+</script>
+</body>
+</html>

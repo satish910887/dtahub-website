@@ -1,0 +1,138 @@
+/* ============================================================
+   MODALS — login/signup, tournament forms, detail views, etc.
+   Structure:
+     1. Backdrop
+     2. Panel (glow border, entrance animation)
+     3. Close button
+     4. Form elements (glowing focus states)
+     5. Switch link ("Don't have an account?")
+   ============================================================ */
+
+/* ---------- 1. Backdrop ---------- */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 7, 14, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: modalFadeIn var(--t-base);
+}
+.modal[hidden] { display: none; }
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- 2. Panel ---------- */
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xl);
+  box-shadow: var(--sh-card), 0 0 60px rgba(124, 58, 237, 0.08);
+  animation: modalPopIn var(--t-slow) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-wide { max-width: 640px; }
+
+@keyframes modalPopIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Thin gradient cap along the top edge of every modal panel - a small
+   consistent brand touch, echoing the navbar/footer scan-lines */
+.modal-content::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent, var(--c-purple-light), var(--c-cyan), transparent);
+}
+
+.modal-content h2 { margin-bottom: var(--sp-lg); }
+
+/* ---------- 3. Close button ---------- */
+
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-full);
+  color: var(--c-text-muted);
+  transition: background var(--t-base), color var(--t-base), transform var(--t-base);
+}
+.modal-close:hover { background: var(--c-surface2); color: var(--c-text); transform: rotate(90deg); }
+
+/* ---------- 4. Form elements ---------- */
+
+.input-group { display: block; margin-bottom: var(--sp-md); text-align: left; }
+.input-group span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  margin-bottom: 6px;
+}
+
+.input-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+/* Layered on top of base.css's input focus rule: adds a soft glow ring
+   scoped to modal forms only, so nothing outside modals changes */
+.modal-content input:focus,
+.modal-content select:focus,
+.modal-content textarea:focus {
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+
+.password-strength { display: block; margin-top: 6px; font-size: 0.75rem; height: 1em; transition: color var(--t-base); }
+.password-strength.weak { color: var(--c-coral); }
+.password-strength.medium { color: var(--c-gold); }
+.password-strength.strong { color: var(--c-green); }
+
+.modal-content form { margin-top: var(--sp-md); }
+.modal-content button[type="submit"] { margin-top: var(--sp-sm); }
+
+/* ---------- 5. Switch link ---------- */
+
+.modal-switch {
+  text-align: center;
+  margin-top: var(--sp-md);
+  font-size: 0.86rem;
+  color: var(--c-text-muted);
+}
+.modal-switch button {
+  position: relative;
+  color: var(--c-cyan);
+  font-weight: 600;
+  transition: color var(--t-base);
+}
+.modal-switch button::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -1px;
+  width: 0; height: 1px;
+  background: var(--c-cyan);
+  transition: width var(--t-base);
+}
+.modal-switch button:hover::after { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal, .modal-content { animation: none !important; }
+}

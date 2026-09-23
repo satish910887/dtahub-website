@@ -1,0 +1,268 @@
+/* ============================================================
+   EFFECTS 3D — site-wide "alive" layer.
+   Reusable on top of every existing component: 3D tilt + cursor
+   glow for cards, an ambient aurora/grid background that follows
+   you down the whole page (not just the hero), and scroll-reveal
+   motion. Everything here is additive — it never overrides a
+   component's own layout, only appearance/motion.
+
+   Respects prefers-reduced-motion and touch devices: effects-3d.js
+   only wires up the JS-driven parts on fine-pointer / hover-capable
+   screens, so this file is safe to ship globally.
+   ============================================================ */
+
+/* ---------------- Ambient page background ----------------
+   A fixed layer behind every section so the whole site (not just the
+   hero) shares one living sky. Colors come from --amb-* tokens
+   (base.css), which switch per data-theme — so Dark/Flame/Nebula each
+   get their own sky, orbs, grid tint and star tint automatically. */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--c-bg);
+}
+
+/* Sky wash — theme-specific gradient, breathing slowly so it never
+   feels static. */
+.ambient-sky {
+  position: absolute;
+  inset: 0;
+  background: var(--amb-sky-bg);
+  animation: ambientSkyBreathe 10s ease-in-out infinite alternate;
+}
+
+@keyframes ambientSkyBreathe {
+  from { opacity: 0.88; }
+  to   { opacity: 1; }
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(55px);
+  opacity: 0.3;
+  will-change: transform;
+  animation: ambientDrift 26s ease-in-out infinite;
+}
+
+.ambient-orb.o1 {
+  width: 420px;
+  height: 420px;
+  top: -10%;
+  left: -8%;
+  background: var(--amb-orb1);
+  animation-duration: 30s;
+}
+
+.ambient-orb.o2 {
+  width: 340px;
+  height: 340px;
+  top: 40%;
+  right: -10%;
+  background: var(--amb-orb2);
+  animation-duration: 34s;
+  animation-delay: -8s;
+}
+
+.ambient-orb.o3 {
+  width: 300px;
+  height: 300px;
+  bottom: -12%;
+  left: 30%;
+  background: var(--amb-orb3);
+  animation-duration: 28s;
+  animation-delay: -16s;
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: -20% -10%;
+  background-image:
+    linear-gradient(var(--amb-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--amb-grid-color) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 0%, transparent 75%);
+  opacity: 0.45;
+}
+
+/* Fine grain — breaks up the smooth gradients so the sky reads as
+   textured/alive rather than a flat blurred wash. */
+.ambient-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Stars — crisp fixed points across the whole page (JS-generated),
+   the missing "clear detail" layer that made the sky read as hazy. */
+.ambient-stars { position: absolute; inset: 0; }
+.ambient-star {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--amb-star-color);
+  animation-name: ambientStarTwinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes ambientStarTwinkle {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.9; }
+}
+
+@keyframes ambientDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -24px) scale(1.06); }
+  66% { transform: translate(-22px, 18px) scale(0.96); }
+}
+
+@media (max-width: 640px) {
+  .ambient-orb { filter: blur(40px); opacity: 0.22; }
+}
+
+/* ---------------- Shooting stars ----------------
+   Spawned by effects-3d.js at random positions/intervals, one at a
+   time removed after it animates. Bright head + fading tail,
+   travelling on a shallow diagonal like a real meteor streak. */
+.shooting-star {
+  position: absolute;
+  top: var(--sy, 10%);
+  left: var(--sx, 10%);
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  animation: shootingStar 1.6s cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+
+.shooting-star::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 130px;
+  height: 1px;
+  transform: translateY(-50%) rotate(180deg);
+  background: linear-gradient(90deg, rgba(255, 214, 170, 0.85), transparent);
+}
+
+@keyframes shootingStar {
+  0%   { opacity: 0; transform: translate(0, 0); }
+  8%   { opacity: 1; }
+  75%  { opacity: 0.9; }
+  100% {
+    opacity: 0;
+    transform: translate(var(--stx, -320px), var(--sty, 170px));
+  }
+}
+
+/* ---------------- 3D tilt cards ----------------
+   Applied via JS (pointer-fine only) to any element matching the
+   TILT_SELECTOR list in effects-3d.js. --rx/--ry/--mx/--my are set
+   live on pointermove; they default to a flat, centered state so
+   the class is harmless before JS ever touches it. */
+.tilt-3d {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0);
+  transform-style: preserve-3d;
+  position: relative;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  will-change: transform;
+}
+
+.tilt-3d.is-tilting {
+  transition: transform 0.08s linear;
+}
+
+.tilt-3d.is-tilting,
+.tilt-3d:hover {
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Cursor-tracking glow spotlight, layered above the card's own
+   background but below its text/content. */
+.tilt-3d::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.14), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tilt-3d.is-tilting::after {
+  opacity: 1;
+}
+
+/* Keep a card's real content above the glow overlay without
+   requiring every component to add z-index bookkeeping. */
+.tilt-3d > * {
+  position: relative;
+  z-index: 2;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .tilt-3d {
+    transform: none !important;
+  }
+  .tilt-3d::after {
+    display: none;
+  }
+}
+
+/* ---------------- Scroll reveal ----------------
+   .reveal elements start slightly lowered + faded; effects-3d.js
+   adds .is-visible via IntersectionObserver. Falls back to fully
+   visible if JS never runs (no-JS / error safety). */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .ambient-orb {
+    animation: none;
+  }
+}
+
+/* Small reusable "live" pulse dot for badges outside the hero
+   (e.g. "Live" tournament status, online indicators). */
+.live-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-green);
+  box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
+  animation: livePulse 1.8s ease-out infinite;
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+}

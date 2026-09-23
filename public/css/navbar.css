@@ -1,0 +1,185 @@
+/* ============================================================
+   NAVBAR — glass panel, compacts on scroll, animated link indicator
+   Structure:
+     1. Bar (glass background, scroll-shrink, scan-line border)
+     2. Logo (icon glow, gradient wordmark)
+     3. Links (desktop — sliding hover/active indicator)
+     4. Actions (icon button, profile/admin, login, hamburger)
+     5. Mobile menu (slide-down glass panel, staggered entrance)
+   ============================================================ */
+
+/* ---------- 1. Bar ---------- */
+
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: var(--z-nav);
+  background: rgba(10, 14, 26, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t-base), background var(--t-base);
+}
+[data-theme="light"] .navbar { background: rgba(245, 246, 251, 0.6); }
+
+/* Thin gradient line at the very bottom edge, brand colors, fades in on scroll */
+.navbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-purple-light), var(--c-cyan), transparent);
+  background-size: 200% auto;
+  opacity: 0;
+  transition: opacity var(--t-base);
+  animation: navScan 8s linear infinite;
+}
+.navbar.scrolled {
+  border-bottom-color: transparent;
+  background: rgba(10, 14, 26, 0.86);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.navbar.scrolled::after { opacity: 0.6; }
+[data-theme="light"] .navbar.scrolled { background: rgba(245, 246, 251, 0.92); }
+@keyframes navScan { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-lg);
+  transition: padding var(--t-base);
+}
+/* Slightly more compact once scrolled - a subtle "premium app" feel */
+.navbar.scrolled .nav-inner { padding: 11px 24px; }
+
+/* ---------- 2. Logo ---------- */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  position: relative;
+}
+.logo img {
+  display: block;
+  filter: drop-shadow(0 0 0 rgba(124, 58, 237, 0));
+  transition: filter var(--t-base), transform var(--t-base);
+}
+.logo:hover img {
+  filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.55));
+  transform: rotate(-6deg) scale(1.06);
+}
+.logo em {
+  font-style: normal;
+  background: var(--g-brand);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: background-position 0.6s ease;
+}
+.logo:hover em { background-position: 100% 50%; }
+
+/* ---------- 3. Links (desktop) ---------- */
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-lg);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+.nav-links a {
+  position: relative;
+  color: var(--c-text-muted);
+  padding: 4px 0;
+  transition: color var(--t-base);
+}
+.nav-links a:hover, .nav-links a.active { color: var(--c-text); }
+
+/* Sliding underline: a shared-feeling indicator via ::after per link,
+   width driven purely by :hover/.active so it needs no JS */
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -6px;
+  width: 0;
+  height: 2px;
+  background: var(--g-brand);
+  border-radius: 2px;
+  transition: width var(--t-base);
+}
+.nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+
+/* ---------- 4. Actions ---------- */
+
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+
+.icon-btn { transition: transform var(--t-base), border-color var(--t-base), box-shadow var(--t-base); }
+.icon-btn:hover { transform: rotate(-12deg) scale(1.08); box-shadow: 0 0 14px rgba(0, 245, 255, 0.25); }
+
+.nav-profile-btn { font-size: 0.85rem; padding: 10px 18px; }
+
+#loginBtn {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+#loginBtn:hover { transform: translateY(-1px) scale(1.03); box-shadow: 0 6px 22px rgba(124, 58, 237, 0.35); }
+
+.menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+}
+.menu-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  margin: 0 auto;
+  background: var(--c-text);
+  border-radius: 2px;
+  transition: transform var(--t-base), opacity var(--t-base), background var(--t-base);
+}
+.menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.menu-btn[aria-expanded="true"] span { background: var(--c-cyan); }
+
+/* ---------- 5. Mobile menu ---------- */
+/* Panel positioning/visibility stays governed by responsive.css
+   (which toggles this at the 760px breakpoint); this block only adds
+   the staggered entrance for each link once .open is applied. */
+
+@media (max-width: 760px) {
+  .nav-links a {
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.35s ease, transform 0.35s ease, color var(--t-base);
+  }
+  .nav-links.open a { opacity: 1; transform: translateX(0); }
+  .nav-links.open a:nth-child(1) { transition-delay: 0.03s; }
+  .nav-links.open a:nth-child(2) { transition-delay: 0.08s; }
+  .nav-links.open a:nth-child(3) { transition-delay: 0.13s; }
+  .nav-links.open a:nth-child(4) { transition-delay: 0.18s; }
+  .nav-links.open a:nth-child(5) { transition-delay: 0.23s; }
+  .nav-links a::after { display: none; } /* underline indicator reads better on desktop only */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar::after { animation: none; }
+  .logo img, .logo em, .icon-btn, #loginBtn, .nav-links a {
+    transition: none !important;
+  }
+}
